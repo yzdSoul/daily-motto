@@ -2,7 +2,7 @@
 title: 📜 每日格言
 emoji: 📜
 colorFrom: yellow
-colorTo: amber
+colorTo: yellow
 sdk: docker
 app_port: 7860
 ---
