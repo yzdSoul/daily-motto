@@ -1,3 +1,12 @@
+---
+title: 📜 每日格言
+emoji: 📜
+colorFrom: yellow
+colorTo: amber
+sdk: docker
+app_port: 7860
+---
+
 # 📜 每日格言 · Daily Motto Web
 
 一个精美的中英文格言 Web 应用，支持每日格言推荐、分类浏览、全文搜索和 REST API。
