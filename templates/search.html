@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索 - 每日格言</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">📜 每日格言</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">首页</a>
+                <a href="/all" class="nav-link">全部格言</a>
+                <a href="/search" class="nav-link active">搜索</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1>搜索格言</h1>
+            <p class="page-desc">搜索中文、英文、作者或分类</p>
+        </div>
+    </div>
+
+    <main class="container">
+        <div class="search-box">
+            <form action="/search" method="get" class="search-form">
+                <input type="text" name="q" class="search-input"
+                       placeholder="搜索格言内容、作者或分类..."
+                       value="{{ keyword }}" autofocus>
+                <button type="submit" class="search-btn">🔍 搜索</button>
+            </form>
+        </div>
+
+        {% if keyword %}
+        <div class="search-results">
+            <p class="result-count">找到 <strong>{{ results|length }}</strong> 条相关格言</p>
+            <div class="quotes-list">
+                {% for q in results %}
+                <div class="quote-card" onclick="copyText(`{{ q.cn }}\n{{ q.en }}\n—— {{ q.author }})" title="点击复制">
+                    <div class="quote-content">
+                        <p class="quote-cn">{{ q.cn }}</p>
+                        <p class="quote-en">{{ q.en }}</p>
+                    </div>
+                    <div class="quote-footer">
+                        <span class="quote-author">—— {{ q.author }}</span>
+                        <span class="quote-category">{{ q.category }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if not results %}
+            <div class="empty-state">
+                <p>🔍 没有找到匹配的格言，试试其他关键词吧</p>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="search-hints">
+            <h3>💡 搜索提示</h3>
+            <ul>
+                <li>搜索中文内容：<code>千里之行</code></li>
+                <li>搜索英文内容：<code>journey</code></li>
+                <li>搜索作者：<code>孔子</code> <code>Steve Jobs</code></li>
+                <li>搜索分类：<code>励志</code> <code>wisdom</code></li>
+            </ul>
+            <div class="quick-tags">
+                {% for cat in categories %}
+                <a href="/search?q={{ cat }}" class="filter-tag">{{ cat }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>📜 每日格言 · Daily Motto</p>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast">已复制到剪贴板 📋</div>
+    <script>
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            });
+        }
+    </script>
+</body>
+</html>

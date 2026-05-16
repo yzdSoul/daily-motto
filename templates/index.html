@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日格言 - Daily Motto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">📜 每日格言</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link active">首页</a>
+                <a href="/all" class="nav-link">全部格言</a>
+                <a href="/search" class="nav-link">搜索</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <p class="hero-subtitle">Daily Motto · <span id="today-date">{{ today }}</span></p>
+            <h1 class="hero-title">每日格言</h1>
+            <p class="hero-desc">收录 <strong>{{ total }}</strong> 条中英文对照格言，每日更新，启迪智慧</p>
+        </div>
+    </div>
+
+    <main class="container">
+        <!-- 每日格言 -->
+        <section class="quote-section" id="daily-section">
+            <div class="section-header">
+                <span class="section-icon">📅</span>
+                <h2>今日格言</h2>
+            </div>
+            <div class="quote-card featured" onclick="copyQuote(this)" title="点击复制">
+                <div class="quote-badge">DAILY</div>
+                <div class="quote-content">
+                    <p class="quote-cn">{{ daily.cn }}</p>
+                    <p class="quote-en">{{ daily.en }}</p>
+                </div>
+                <div class="quote-footer">
+                    <span class="quote-author">—— {{ daily.author }}</span>
+                    <span class="quote-category">{{ daily.category }}</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 随机格言 -->
+        <section class="quote-section" id="random-section">
+            <div class="section-header">
+                <span class="section-icon">🎲</span>
+                <h2>随机格言</h2>
+                <button class="btn-icon" onclick="refreshRandom()" title="换一条">⟳</button>
+            </div>
+            <div class="quote-card" onclick="copyQuote(this)" title="点击复制">
+                <div class="quote-content">
+                    <p class="quote-cn">{{ random.cn }}</p>
+                    <p class="quote-en">{{ random.en }}</p>
+                </div>
+                <div class="quote-footer">
+                    <span class="quote-author">—— {{ random.author }}</span>
+                    <span class="quote-category">{{ random.category }}</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 分类导航 -->
+        <section class="categories-section">
+            <div class="section-header">
+                <span class="section-icon">📂</span>
+                <h2>浏览分类</h2>
+            </div>
+            <div class="categories-grid">
+                {% for cat in categories %}
+                <a href="/all?category={{ cat }}" class="category-card">
+                    <span class="category-name">{{ cat }}</span>
+                    <span class="category-count" id="count-{{ loop.index }}">...</span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>📜 每日格言 · Daily Motto</p>
+            <p class="footer-sub">每天一句好格言，启迪智慧与人生</p>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast">已复制到剪贴板 📋</div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

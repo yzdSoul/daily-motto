@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全部格言 - 每日格言</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">📜 每日格言</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">首页</a>
+                <a href="/all" class="nav-link active">全部格言</a>
+                <a href="/search" class="nav-link">搜索</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1>全部格言</h1>
+            <p class="page-desc">共 <strong>{{ quotes|length }}</strong> 条格言 · 当前分类：<strong>{{ current_category }}</strong></p>
+        </div>
+    </div>
+
+    <main class="container">
+        <!-- 分类过滤器 -->
+        <div class="filter-bar">
+            <a href="/all" class="filter-tag {% if current_category == '全部' %}active{% endif %}">全部</a>
+            {% for cat in categories %}
+            <a href="/all?category={{ cat }}" class="filter-tag {% if current_category == cat %}active{% endif %}">{{ cat }}</a>
+            {% endfor %}
+        </div>
+
+        <!-- 格言列表 -->
+        <div class="quotes-list">
+            {% for q in quotes %}
+            <div class="quote-card" onclick="copyText(`{{ q.cn }}\n{{ q.en }}\n—— {{ q.author }}`)" title="点击复制">
+                <div class="quote-content">
+                    <p class="quote-cn">{{ q.cn }}</p>
+                    <p class="quote-en">{{ q.en }}</p>
+                </div>
+                <div class="quote-footer">
+                    <span class="quote-author">—— {{ q.author }}</span>
+                    <span class="quote-category">{{ q.category }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if not quotes %}
+        <div class="empty-state">
+            <p>😶 这个分类下暂时没有格言</p>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>📜 每日格言 · Daily Motto</p>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast">已复制到剪贴板 📋</div>
+    <script>
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            });
+        }
+    </script>
+</body>
+</html>
