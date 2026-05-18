@@ -23,8 +23,9 @@ app_port: 7860
 - 🔍 **全文搜索** — 支持中文、英文、作者、分类搜索
 - 📋 **一键复制** — 点击格言即可复制分享
 - 📱 **响应式设计** — 手机、平板、桌面都好看
-- 🌙 **暗色主题** — 护眼美观
+- 🌙 **深色/浅色主题** — 护眼美观，支持自动跟随系统和手动切换
 - 🔌 **REST API** — 方便二次开发
+- 🖼️ **可嵌入 Widget** — `<iframe>` 嵌入其他网站，每日同步更新
 
 ## 🚀 快速启动（本地）
 
@@ -111,6 +112,24 @@ python app.py
 | `GET /api/search?q=关键词` | 搜索格言 |
 | `GET /api/categories` | 获取所有分类和数量 |
 
+## 🖼️ 可嵌入 Widget
+
+在你的网站中嵌入每日格言卡片：
+
+```html
+<iframe src="https://yzdsoul-daily-motto.hf.space/widget"
+        width="100%" height="180"
+        frameborder="0"
+        style="max-width:500px; border-radius:12px;">
+</iframe>
+```
+
+特性：
+- 🌓 **主题切换** — 自动跟随系统主题，支持手动切换，记忆选择
+- 📅 **每日同步** — 与主站每日格言保持一致
+- 🔗 **品牌链接** — 底部显示「每日格言」链接返回主站
+- 🎨 **独立样式** — 不污染宿主页面 CSS
+
 ## 🛠 技术栈
 
 - **后端**: Python Flask + Gunicorn
@@ -122,18 +141,24 @@ python app.py
 
 ```
 daily-motto-web/
-├── app.py              # Flask 主程序 + API
+├── app.py              # Flask 主程序 + API + Widget
 ├── quotes.py           # 格言数据 (24条精选)
 ├── requirements.txt    # Flask + Gunicorn
 ├── Dockerfile          # 容器化部署
 ├── README.md           # 说明文档
+├── docs/
+│   └── plans/
+│       └── 2026-05-18-embed-widget.md  # Widget 实施计划
 ├── templates/
 │   ├── index.html     # 首页 (每日+随机)
 │   ├── all.html       # 全部格言 (分类筛选)
-│   └── search.html    # 搜索页面
+│   ├── search.html    # 搜索页面
+│   └── widget.html    # 可嵌入 Widget 卡片
 └── static/
     ├── style.css      # 暗色主题样式
-    └── app.js         # 交互逻辑
+    ├── app.js         # 主站交互逻辑
+    ├── widget.css     # Widget 样式 (浅色+深色)
+    └── widget.js      # Widget 主题管理器
 ```
 
 ## 📄 许可
