@@ -7,7 +7,9 @@ import random
 from datetime import date
 from flask import Flask, render_template, jsonify, request
 
-from quotes import QUOTES, CATEGORIES, get_random_quote, get_daily_quote, search_quotes, get_quotes_by_category
+from quotes import (CATEGORIES, get_random_quote, get_daily_quote,
+                     search_quotes, get_quotes_by_category, get_all_quotes,
+                     get_quote_count)
 
 app = Flask(__name__)
 
@@ -21,7 +23,7 @@ def index():
                          daily=daily,
                          random=random_q,
                          today=date.today().isoformat(),
-                         total=len(QUOTES),
+                         total=get_quote_count(),
                          categories=CATEGORIES)
 
 
@@ -32,7 +34,7 @@ def all_quotes():
     if category and category in CATEGORIES:
         quotes = get_quotes_by_category(category)
     else:
-        quotes = QUOTES
+        quotes = get_all_quotes()
         category = "全部"
     return render_template("all.html",
                          quotes=quotes,
@@ -77,7 +79,7 @@ def api_all():
     if category and category in CATEGORIES:
         quotes = get_quotes_by_category(category)
     else:
-        quotes = QUOTES
+        quotes = get_all_quotes()
     return jsonify({
         "total": len(quotes),
         "quotes": quotes,
@@ -103,7 +105,7 @@ def api_categories():
     return jsonify({
         "categories": CATEGORIES,
         "counts": counts,
-        "total": len(QUOTES),
+        "total": get_quote_count(),
     })
 
 
