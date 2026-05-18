@@ -107,5 +107,16 @@ def api_categories():
     })
 
 
+# ========== Widget ==========
+
+@app.route("/widget")
+def widget():
+    """可嵌入 Widget - 每日格言卡片"""
+    daily = get_daily_quote()
+    return render_template("widget.html",
+                         quote=daily,
+                         today=date.today().isoformat())
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
