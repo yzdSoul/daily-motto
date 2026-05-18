@@ -9,7 +9,7 @@ from flask import Flask, render_template, jsonify, request
 
 from quotes import (CATEGORIES, get_random_quote, get_daily_quote,
                      search_quotes, get_quotes_by_category, get_all_quotes,
-                     get_quote_count)
+                     get_quote_count, submit_quote)
 
 app = Flask(__name__)
 
@@ -118,6 +118,48 @@ def widget():
     return render_template("widget.html",
                          quote=daily,
                          today=date.today().isoformat())
+
+
+# ========== 投稿 ==========
+
+@app.route("/submit", methods=["GET", "POST"])
+def submit():
+    """用户投稿格言"""
+    if request.method == "POST":
+        cn = request.form.get("cn", "").strip()
+        en = request.form.get("en", "").strip()
+        author = request.form.get("author", "").strip()
+        category = request.form.get("category", "").strip()
+        submitter = request.form.get("submitter", "").strip()
+
+        errors = {}
+        if not cn:
+            errors["cn"] = "请输入中文格言"
+        if not author:
+            errors["author"] = "请输入作者"
+        if not category:
+            errors["category"] = "请选择分类"
+        elif category not in CATEGORIES:
+            errors["category"] = "分类无效"
+
+        if not errors:
+            result = submit_quote(cn, author, category, en, submitter)
+            if result["success"]:
+                return render_template("submit.html",
+                                     success=True,
+                                     categories=CATEGORIES)
+            else:
+                errors["cn"] = result.get("error", "提交失败，请重试")
+
+        return render_template("submit.html",
+                             errors=errors,
+                             form_data=request.form,
+                             categories=CATEGORIES)
+
+    return render_template("submit.html",
+                         categories=CATEGORIES,
+                         form_data={},
+                         errors={})
 
 
 if __name__ == "__main__":

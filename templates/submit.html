@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投稿 - 每日格言</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        .submit-form { max-width: 600px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-secondary); font-weight: 600; }
+        .form-group label .required { color: var(--accent); }
+        .form-input, .form-select, .form-textarea {
+            width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 14px 16px; color: var(--text-primary);
+            font-size: 1rem; outline: none; transition: border-color 0.2s;
+            font-family: var(--font-en);
+        }
+        .form-textarea { min-height: 80px; resize: vertical; font-family: var(--font-cn); }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent-dim); }
+        .form-select option { background: var(--bg-secondary); color: var(--text-primary); }
+        .form-hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        .form-error { color: #ff6b6b; font-size: 0.85rem; margin-top: 4px; }
+        .form-success { text-align: center; padding: 40px 20px; }
+        .form-success h2 { font-family: var(--font-cn); font-size: 1.8rem; margin-bottom: 12px; }
+        .form-success p { color: var(--text-secondary); }
+        .submit-btn {
+            background: var(--accent-gradient); border: none; border-radius: var(--radius-sm);
+            padding: 14px 32px; color: #000; font-weight: 700; font-size: 1rem;
+            cursor: pointer; transition: opacity 0.2s; width: 100%;
+        }
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">📜 每日格言</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">首页</a>
+                <a href="/all" class="nav-link">全部格言</a>
+                <a href="/search" class="nav-link">搜索</a>
+                <a href="/submit" class="nav-link active">投稿</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1>📝 投稿格言</h1>
+            <p class="page-desc">分享你喜欢的名言，让更多人看到</p>
+        </div>
+    </div>
+
+    <main class="container submit-form">
+        {% if success %}
+        <div class="form-success">
+            <h2>✅ 提交成功！</h2>
+            <p>感谢你的分享 ❤️ 格言已进入审核队列，通过后就会展示在网站上。</p>
+            <br>
+            <a href="/" class="search-btn" style="display:inline-block; text-decoration:none;">返回首页</a>
+            <a href="/submit" class="filter-tag" style="display:inline-block; margin-left:10px;">再投一条</a>
+        </div>
+        {% else %}
+        <form method="post" action="/submit">
+            <div class="form-group">
+                <label><span class="required">*</span> 中文格言</label>
+                <textarea name="cn" class="form-textarea" placeholder="请输入中文格言..." required>{{ form_data.cn or '' }}</textarea>
+                {% if errors.cn %}<div class="form-error">{{ errors.cn }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label>英文翻译</label>
+                <textarea name="en" class="form-textarea" placeholder="英文翻译（选填）..." style="font-family:var(--font-en);">{{ form_data.en or '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label><span class="required">*</span> 作者</label>
+                <input type="text" name="author" class="form-input" placeholder="如：孔子、爱因斯坦、佚名" required value="{{ form_data.author or '' }}">
+                {% if errors.author %}<div class="form-error">{{ errors.author }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label><span class="required">*</span> 分类</label>
+                <select name="category" class="form-select" required>
+                    <option value="">— 请选择分类 —</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if form_data and form_data.category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+                {% if errors.category %}<div class="form-error">{{ errors.category }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label>你的昵称（选填）</label>
+                <input type="text" name="submitter" class="form-input" placeholder="匿名投稿" value="{{ form_data.submitter or '' }}">
+                <div class="form-hint">留空则显示为"匿名用户"</div>
+            </div>
+
+            <button type="submit" class="submit-btn">📤 提交格言</button>
+        </form>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>📜 每日格言 · Daily Motto</p>
+        </div>
+    </footer>
+</body>
+</html>
