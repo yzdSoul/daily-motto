@@ -17,6 +17,22 @@ from jokes import (JOKE_CATEGORIES, get_random_joke, get_daily_joke,
 
 app = Flask(__name__)
 
+# ===== HTTP 缓存头 =====
+
+@app.after_request
+def add_caching_headers(response):
+    # 静态资源：浏览器缓存 1 小时
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+    # 每日 API：当天不变，缓存到明天
+    elif request.path in ('/api/daily', '/api/joke/daily'):
+        response.headers['Cache-Control'] = 'public, max-age=86400'
+    # 分类 API：变化不频繁，缓存 5 分钟
+    elif request.path in ('/api/categories', '/api/jokes/categories'):
+        response.headers['Cache-Control'] = 'public, max-age=300'
+    return response
+
+
 # 每日缓存（避免同一天重复查询 MongoDB）
 _daily_cache = {}
 _cache_date = None
