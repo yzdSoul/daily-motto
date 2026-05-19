@@ -12,7 +12,7 @@ from quotes import (CATEGORIES, get_random_quote, get_daily_quote,
                      get_quote_count, submit_quote)
 from jokes import (JOKE_CATEGORIES, get_random_joke, get_daily_joke,
                     search_jokes, get_jokes_by_category, get_all_jokes,
-                    get_joke_count)
+                    get_joke_count, submit_joke)
 
 app = Flask(__name__)
 
@@ -169,6 +169,50 @@ def submit():
 
     return render_template("submit.html",
                          categories=CATEGORIES,
+                         form_data={},
+                         errors={})
+
+
+# ========== 冷笑话投稿 ==========
+
+@app.route("/submit/joke", methods=["GET", "POST"])
+def submit_joke_route():
+    """用户投稿冷笑话"""
+    if request.method == "POST":
+        joke_cn = request.form.get("joke_cn", "").strip()
+        punchline_cn = request.form.get("punchline_cn", "").strip()
+        joke_en = request.form.get("joke_en", "").strip()
+        punchline_en = request.form.get("punchline_en", "").strip()
+        category = request.form.get("category", "").strip()
+        submitter = request.form.get("submitter", "").strip()
+
+        errors = {}
+        if not joke_cn:
+            errors["joke_cn"] = "请输入冷笑话内容"
+        if not punchline_cn:
+            errors["punchline_cn"] = "请输入笑点/答案"
+        if not category:
+            errors["category"] = "请选择分类"
+        elif category not in JOKE_CATEGORIES:
+            errors["category"] = "分类无效"
+
+        if not errors:
+            result = submit_joke(joke_cn, punchline_cn, category, joke_en, punchline_en, submitter)
+            if result["success"]:
+                return render_template("submit_joke.html",
+                                     success=True,
+                                     form_data=request.form,
+                                     categories=JOKE_CATEGORIES)
+            else:
+                errors["joke_cn"] = result.get("error", "提交失败，请重试")
+
+        return render_template("submit_joke.html",
+                             errors=errors,
+                             form_data=request.form,
+                             categories=JOKE_CATEGORIES)
+
+    return render_template("submit_joke.html",
+                         categories=JOKE_CATEGORIES,
                          form_data={},
                          errors={})
 

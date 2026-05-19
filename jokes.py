@@ -16,6 +16,7 @@ _db = _client["daily_motto"]
 
 # 集合引用
 JOKES_COL = _db["jokes"]
+PENDING_JOKES_COL = _db["pending_jokes"]
 
 # 笑话分类
 JOKE_CATEGORIES = [
@@ -120,3 +121,68 @@ def add_jokes_batch(jokes_list):
         else:
             failed += 1
     return {"success": success, "failed": failed}
+
+
+# ===== 投稿相关 =====
+
+def submit_joke(joke_cn, punchline_cn, category, joke_en="", punchline_en="", submitter=""):
+    """用户提交冷笑话 -> pending_jokes"""
+    doc = {
+        "joke_cn": joke_cn,
+        "punchline_cn": punchline_cn,
+        "joke_en": joke_en,
+        "punchline_en": punchline_en,
+        "category": category,
+        "source": "user_submit",
+        "status": "pending",
+        "submitter": submitter or "",
+        "review_notes": "",
+        "submitted_at": date.today().isoformat(),
+    }
+    # 检查是否与已有笑话重复
+    existing = JOKES_COL.find_one({"joke_cn": joke_cn})
+    if existing:
+        return {"success": False, "error": "这条笑话已存在"}
+    pending = PENDING_JOKES_COL.find_one({"joke_cn": joke_cn, "status": "pending"})
+    if pending:
+        return {"success": False, "error": "这条笑话已有人提交，正在审核中"}
+
+    PENDING_JOKES_COL.insert_one(doc)
+    return {"success": True, "message": "提交成功，等待审核"}
+
+
+def get_pending_jokes():
+    """获取待审核的投稿"""
+    return list(PENDING_JOKES_COL.find({"status": "pending"}, {"_id": False}))
+
+
+def approve_joke(joke_cn):
+    """批准投稿 -> 移入 jokes"""
+    doc = PENDING_JOKES_COL.find_one_and_update(
+        {"joke_cn": joke_cn, "status": "pending"},
+        {"$set": {"status": "approved"}},
+    )
+    if doc:
+        joke = {
+            "joke_cn": doc["joke_cn"],
+            "punchline_cn": doc["punchline_cn"],
+            "joke_en": doc.get("joke_en", ""),
+            "punchline_en": doc.get("punchline_en", ""),
+            "category": doc["category"],
+            "source": "user_submit",
+        }
+        try:
+            JOKES_COL.insert_one(joke)
+        except Exception:
+            return {"success": False, "error": "入库失败（可能已存在）"}
+        return {"success": True, "message": f"已批准: {doc['joke_cn'][:30]}..."}
+    return {"success": False, "error": "未找到该投稿"}
+
+
+def reject_joke(joke_cn, reason=""):
+    """拒绝投稿"""
+    PENDING_JOKES_COL.find_one_and_update(
+        {"joke_cn": joke_cn, "status": "pending"},
+        {"$set": {"status": "rejected", "review_notes": reason}},
+    )
+    return {"success": True, "message": "已拒绝"}

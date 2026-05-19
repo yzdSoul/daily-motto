@@ -25,6 +25,17 @@
         .form-success { text-align: center; padding: 40px 20px; }
         .form-success h2 { font-family: var(--font-cn); font-size: 1.8rem; margin-bottom: 12px; }
         .form-success p { color: var(--text-secondary); }
+        .form-success .punchline-preview {
+            background: rgba(100, 200, 255, 0.08);
+            border-left: 3px solid #64c8ff;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin: 16px auto;
+            max-width: 400px;
+            color: #a0e0ff;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
         .submit-btn {
             background: var(--accent-gradient); border: none; border-radius: var(--radius-sm);
             padding: 14px 32px; color: #000; font-weight: 700; font-size: 1rem;
@@ -71,6 +82,7 @@
                 <a href="/" class="nav-link">首页</a>
                 <a href="/all" class="nav-link">格言</a>
                 <a href="/jokes" class="nav-link">冷笑话</a>
+                <a href="/search" class="nav-link">搜索</a>
                 <a href="/submit" class="nav-link active">投稿</a>
             </div>
         </div>
@@ -78,42 +90,50 @@
 
     <div class="page-header">
         <div class="container">
-            <h1>📝 投稿格言</h1>
-            <p class="page-desc">分享你喜欢的名言，让更多人看到</p>
+            <h1>📝 投稿</h1>
+            <p class="page-desc">分享你喜欢的格言或冷笑话，让更多人看到</p>
         </div>
     </div>
 
     <main class="container submit-form">
         <!-- Tabs -->
         <div class="submit-tabs">
-            <a href="/submit" class="submit-tab active"><span class="submit-tab-icon">📜</span>格言投稿</a>
-            <a href="/submit/joke" class="submit-tab"><span class="submit-tab-icon">🥶</span>冷笑话投稿</a>
+            <a href="/submit" class="submit-tab"><span class="submit-tab-icon">📜</span>格言投稿</a>
+            <a href="/submit/joke" class="submit-tab active"><span class="submit-tab-icon">🥶</span>冷笑话投稿</a>
         </div>
+
         {% if success %}
         <div class="form-success">
-            <h2>✅ 提交成功！</h2>
-            <p>感谢你的分享 ❤️ 格言已进入审核队列，通过后就会展示在网站上。</p>
+            <h2>🥶 提交成功！</h2>
+            <p class="punchline-preview">{{ form_data.joke_cn[:50] }}{% if form_data.joke_cn|length > 50 %}...{% endif %}</p>
+            <p>感谢你的分享 ❤️ 冷笑话已进入审核队列，通过后就会展示在网站上。</p>
             <br>
-            <a href="/" class="search-btn" style="display:inline-block; text-decoration:none;">返回首页</a>
-            <a href="/submit" class="filter-tag" style="display:inline-block; margin-left:10px;">再投一条</a>
+            <a href="/jokes" class="search-btn" style="display:inline-block; text-decoration:none;">去看冷笑话</a>
+            <a href="/submit/joke" class="filter-tag" style="display:inline-block; margin-left:10px;">再投一条</a>
         </div>
         {% else %}
-        <form method="post" action="/submit">
+        <form method="post" action="/submit/joke">
             <div class="form-group">
-                <label><span class="required">*</span> 中文格言</label>
-                <textarea name="cn" class="form-textarea" placeholder="请输入中文格言..." required>{{ form_data.cn or '' }}</textarea>
-                {% if errors.cn %}<div class="form-error">{{ errors.cn }}</div>{% endif %}
+                <label><span class="required">*</span> 冷笑话内容</label>
+                <textarea name="joke_cn" class="form-textarea" placeholder="请输入冷笑话的铺垫/问题..." required>{{ form_data.joke_cn or '' }}</textarea>
+                {% if errors.joke_cn %}<div class="form-error">{{ errors.joke_cn }}</div>{% endif %}
+                <div class="form-hint">可以用换行分段的较长笑话</div>
             </div>
 
             <div class="form-group">
-                <label>英文翻译</label>
-                <textarea name="en" class="form-textarea" placeholder="英文翻译（选填）..." style="font-family:var(--font-en);">{{ form_data.en or '' }}</textarea>
+                <label><span class="required">*</span> 笑点 / 答案</label>
+                <textarea name="punchline_cn" class="form-textarea" placeholder="请输⼊笑点或神回复..." required style="background:rgba(100,200,255,0.05);">{{ form_data.punchline_cn or '' }}</textarea>
+                {% if errors.punchline_cn %}<div class="form-error">{{ errors.punchline_cn }}</div>{% endif %}
             </div>
 
             <div class="form-group">
-                <label><span class="required">*</span> 作者</label>
-                <input type="text" name="author" class="form-input" placeholder="如：孔子、爱因斯坦、佚名" required value="{{ form_data.author or '' }}">
-                {% if errors.author %}<div class="form-error">{{ errors.author }}</div>{% endif %}
+                <label>英文笑话（选填）</label>
+                <textarea name="joke_en" class="form-textarea" placeholder="English version (optional)..." style="font-family:var(--font-en);">{{ form_data.joke_en or '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>英文答案（选填）</label>
+                <textarea name="punchline_en" class="form-textarea" placeholder="English punchline (optional)..." style="font-family:var(--font-en);">{{ form_data.punchline_en or '' }}</textarea>
             </div>
 
             <div class="form-group">
@@ -133,14 +153,14 @@
                 <div class="form-hint">留空则显示为"匿名用户"</div>
             </div>
 
-            <button type="submit" class="submit-btn">📤 提交格言</button>
+            <button type="submit" class="submit-btn">🥶 提交冷笑话</button>
         </form>
         {% endif %}
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>📜 每日格言 · Daily Motto</p>
+            <p>📜 每日格言 · Daily Motto · 🥶 冷笑话栏目</p>
         </div>
     </footer>
 </body>
