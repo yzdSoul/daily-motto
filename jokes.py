@@ -86,6 +86,20 @@ def get_all_jokes():
     return list(JOKES_COL.find({}, {"_id": False}))
 
 
+def get_all_joke_categories_with_counts():
+    """获取所有笑话分类及数量（1次聚合查询）"""
+    pipeline = [
+        {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}},
+    ]
+    results = list(JOKES_COL.aggregate(pipeline))
+    counts = {r["_id"]: r["count"] for r in results}
+    for cat in JOKE_CATEGORIES:
+        if cat not in counts:
+            counts[cat] = 0
+    return counts
+
+
 # ===== 管理功能 =====
 
 def add_joke(joke_cn, punchline_cn, category,

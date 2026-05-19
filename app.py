@@ -9,12 +9,29 @@ from flask import Flask, render_template, jsonify, request
 
 from quotes import (CATEGORIES, get_random_quote, get_daily_quote,
                      search_quotes, get_quotes_by_category, get_all_quotes,
-                     get_quote_count, submit_quote)
+                     get_quote_count, get_all_categories_with_counts, submit_quote)
 from jokes import (JOKE_CATEGORIES, get_random_joke, get_daily_joke,
                     search_jokes, get_jokes_by_category, get_all_jokes,
-                    get_joke_count, submit_joke)
+                    get_joke_count, get_all_joke_categories_with_counts,
+                    submit_joke)
 
 app = Flask(__name__)
+
+# 每日缓存（避免同一天重复查询 MongoDB）
+_daily_cache = {}
+_cache_date = None
+
+
+def _get_or_refresh_cache(key, fetcher):
+    """每日缓存：同一天只查一次 MongoDB"""
+    global _cache_date
+    today = date.today().isoformat()
+    if _cache_date != today:
+        _daily_cache.clear()
+        _cache_date = today
+    if key not in _daily_cache:
+        _daily_cache[key] = fetcher()
+    return _daily_cache[key]
 
 
 # ========== 首页 ==========
@@ -22,16 +39,20 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     """首页 - 展示每日格言、随机格言和每日冷笑话"""
-    daily = get_daily_quote()
-    random_q = get_random_quote()
-    daily_joke = get_daily_joke()
+    # 总数每天只查一次
+    total = _get_or_refresh_cache("quote_count", get_quote_count)
+    joke_total = _get_or_refresh_cache("joke_count", get_joke_count)
+
+    daily = _get_or_refresh_cache("daily_quote", get_daily_quote)
+    daily_joke = _get_or_refresh_cache("daily_joke", get_daily_joke)
+    random_q = get_random_quote()  # 随机每次不同，不缓存
     return render_template("index.html",
                          daily=daily,
                          random=random_q,
                          daily_joke=daily_joke,
                          today=date.today().isoformat(),
-                         total=get_quote_count(),
-                         joke_total=get_joke_count(),
+                         total=total,
+                         joke_total=joke_total,
                          categories=CATEGORIES,
                          joke_categories=JOKE_CATEGORIES)
 
@@ -75,8 +96,8 @@ def api_random():
 
 @app.route("/api/daily")
 def api_daily():
-    """API: 获取每日格言"""
-    q = get_daily_quote()
+    """API: 获取每日格言（每日缓存）"""
+    q = _get_or_refresh_cache("daily_quote", get_daily_quote)
     return jsonify({
         "date": date.today().isoformat(),
         "quote": q,
@@ -111,12 +132,13 @@ def api_search():
 
 @app.route("/api/categories")
 def api_categories():
-    """API: 获取所有分类"""
-    counts = {cat: len(get_quotes_by_category(cat)) for cat in CATEGORIES}
+    """API: 获取所有分类（每日缓存）"""
+    counts = _get_or_refresh_cache("quote_category_counts", get_all_categories_with_counts)
+    total = _get_or_refresh_cache("quote_count", get_quote_count)
     return jsonify({
         "categories": CATEGORIES,
         "counts": counts,
-        "total": get_quote_count(),
+        "total": total,
     })
 
 
@@ -245,8 +267,8 @@ def api_joke_random():
 
 @app.route("/api/joke/daily")
 def api_joke_daily():
-    """API: 获取每日冷笑话"""
-    j = get_daily_joke()
+    """API: 获取每日冷笑话（每日缓存）"""
+    j = _get_or_refresh_cache("daily_joke", get_daily_joke)
     return jsonify({
         "date": date.today().isoformat(),
         "joke": j,
@@ -281,12 +303,13 @@ def api_jokes_search():
 
 @app.route("/api/jokes/categories")
 def api_jokes_categories():
-    """API: 获取冷笑话分类"""
-    counts = {cat: len(get_jokes_by_category(cat)) for cat in JOKE_CATEGORIES}
+    """API: 获取冷笑话分类（每日缓存）"""
+    counts = _get_or_refresh_cache("joke_category_counts", get_all_joke_categories_with_counts)
+    total = _get_or_refresh_cache("joke_count", get_joke_count)
     return jsonify({
         "categories": JOKE_CATEGORIES,
         "counts": counts,
-        "total": get_joke_count(),
+        "total": total,
     })
 
 
