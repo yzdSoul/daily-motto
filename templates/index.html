@@ -14,7 +14,8 @@
             <a href="/" class="nav-brand">📜 每日格言</a>
             <div class="nav-links">
                 <a href="/" class="nav-link active">首页</a>
-                <a href="/all" class="nav-link">全部格言</a>
+                <a href="/all" class="nav-link">格言</a>
+                <a href="/jokes" class="nav-link">冷笑话</a>
                 <a href="/search" class="nav-link">搜索</a>
                 <a href="/submit" class="nav-link">投稿</a>
             </div>
@@ -25,7 +26,7 @@
         <div class="container">
             <p class="hero-subtitle">Daily Motto · <span id="today-date">{{ today }}</span></p>
             <h1 class="hero-title">每日格言</h1>
-            <p class="hero-desc">收录 <strong>{{ total }}</strong> 条中英文对照格言，每日更新，启迪智慧</p>
+            <p class="hero-desc">收录 <strong>{{ total }}</strong> 条中英文对照格言 · <strong>{{ joke_total }}</strong> 条冷笑话，每日更新</p>
         </div>
     </div>
 
@@ -68,6 +69,38 @@
             </div>
         </section>
 
+        <!-- 每日冷笑话 -->
+        <section class="quote-section" id="joke-section">
+            <div class="section-header">
+                <span class="section-icon">🥶</span>
+                <h2>今日冷笑话</h2>
+                <button class="btn-icon" onclick="refreshJoke()" title="换一个">⟳</button>
+            </div>
+            <div class="joke-card featured" onclick="revealPunchline(this)" title="点击揭晓答案">
+                <div class="joke-setup">
+                    <span class="joke-bubble">{{ daily_joke.joke_cn|replace('\n', '<br>')|safe }}</span>
+                </div>
+                <div class="joke-punchline hidden">
+                    <span class="punchline-arrow">→</span>
+                    <span class="punchline-text">{{ daily_joke.punchline_cn }}</span>
+                </div>
+                {% if daily_joke.joke_en %}
+                <div class="joke-en">
+                    <span class="joke-en-label">EN:</span> {{ daily_joke.joke_en }}
+                </div>
+                {% endif %}
+                {% if daily_joke.punchline_en %}
+                <div class="joke-en punchline-en hidden">
+                    <span class="joke-en-label">→</span> {{ daily_joke.punchline_en }}
+                </div>
+                {% endif %}
+                <div class="joke-footer">
+                    <span class="joke-category">{{ daily_joke.category }}</span>
+                    <a href="/jokes" class="joke-more">🥶 全部冷笑话 →</a>
+                </div>
+            </div>
+        </section>
+
         <!-- 分类导航 -->
         <section class="categories-section">
             <div class="section-header">
@@ -87,8 +120,8 @@
 
     <footer class="footer">
         <div class="container">
-            <p>📜 每日格言 · Daily Motto</p>
-            <p class="footer-sub">每天一句好格言，启迪智慧与人生</p>
+            <p>📜 每日格言 · Daily Motto · 🥶 冷笑话栏目</p>
+            <p class="footer-sub">每天一句好格言 + 一个冷笑话，启迪智慧与快乐</p>
         </div>
     </footer>
 

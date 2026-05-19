@@ -10,22 +10,33 @@ from flask import Flask, render_template, jsonify, request
 from quotes import (CATEGORIES, get_random_quote, get_daily_quote,
                      search_quotes, get_quotes_by_category, get_all_quotes,
                      get_quote_count, submit_quote)
+from jokes import (JOKE_CATEGORIES, get_random_joke, get_daily_joke,
+                    search_jokes, get_jokes_by_category, get_all_jokes,
+                    get_joke_count)
 
 app = Flask(__name__)
 
 
+# ========== 首页 ==========
+
 @app.route("/")
 def index():
-    """首页 - 展示每日格言和随机格言"""
+    """首页 - 展示每日格言、随机格言和每日冷笑话"""
     daily = get_daily_quote()
     random_q = get_random_quote()
+    daily_joke = get_daily_joke()
     return render_template("index.html",
                          daily=daily,
                          random=random_q,
+                         daily_joke=daily_joke,
                          today=date.today().isoformat(),
                          total=get_quote_count(),
-                         categories=CATEGORIES)
+                         joke_total=get_joke_count(),
+                         categories=CATEGORIES,
+                         joke_categories=JOKE_CATEGORIES)
 
+
+# ========== 格言页面 ==========
 
 @app.route("/all")
 def all_quotes():
@@ -53,7 +64,7 @@ def search():
                          categories=CATEGORIES)
 
 
-# ========== REST API ==========
+# ========== 格言 API ==========
 
 @app.route("/api/random")
 def api_random():
@@ -160,6 +171,79 @@ def submit():
                          categories=CATEGORIES,
                          form_data={},
                          errors={})
+
+
+# ========== 冷笑话页面 ==========
+
+@app.route("/jokes")
+def jokes_list():
+    """冷笑话列表页"""
+    category = request.args.get("category", "")
+    if category and category in JOKE_CATEGORIES:
+        jokes = get_jokes_by_category(category)
+    else:
+        jokes = get_all_jokes()
+        category = "全部"
+    return render_template("jokes.html",
+                         jokes=jokes,
+                         current_category=category,
+                         categories=JOKE_CATEGORIES)
+
+
+# ========== 冷笑话 API ==========
+
+@app.route("/api/joke/random")
+def api_joke_random():
+    """API: 获取随机冷笑话"""
+    j = get_random_joke()
+    return jsonify(j)
+
+
+@app.route("/api/joke/daily")
+def api_joke_daily():
+    """API: 获取每日冷笑话"""
+    j = get_daily_joke()
+    return jsonify({
+        "date": date.today().isoformat(),
+        "joke": j,
+    })
+
+
+@app.route("/api/jokes/all")
+def api_jokes_all():
+    """API: 获取全部冷笑话"""
+    category = request.args.get("category", "")
+    if category and category in JOKE_CATEGORIES:
+        jokes = get_jokes_by_category(category)
+    else:
+        jokes = get_all_jokes()
+    return jsonify({
+        "total": len(jokes),
+        "jokes": jokes,
+    })
+
+
+@app.route("/api/jokes/search")
+def api_jokes_search():
+    """API: 搜索冷笑话"""
+    q = request.args.get("q", "").strip()
+    results = search_jokes(q) if q else []
+    return jsonify({
+        "keyword": q,
+        "total": len(results),
+        "results": results,
+    })
+
+
+@app.route("/api/jokes/categories")
+def api_jokes_categories():
+    """API: 获取冷笑话分类"""
+    counts = {cat: len(get_jokes_by_category(cat)) for cat in JOKE_CATEGORIES}
+    return jsonify({
+        "categories": JOKE_CATEGORIES,
+        "counts": counts,
+        "total": get_joke_count(),
+    })
 
 
 if __name__ == "__main__":

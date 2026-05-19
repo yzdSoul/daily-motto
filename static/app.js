@@ -66,6 +66,64 @@ function refreshRandom() {
         });
 }
 
+// ===== 刷新随机冷笑话 =====
+function refreshJoke() {
+    const section = document.getElementById('joke-section');
+    const card = section.querySelector('.joke-card');
+
+    // Fade out
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(10px)';
+
+    fetch('/api/joke/random')
+        .then(res => res.json())
+        .then(data => {
+            // Update setup
+            setupEl = card.querySelector('.joke-setup');
+            if (data.joke_cn.includes('\n')) {
+                setupEl.innerHTML = '<span class="joke-bubble">' + data.joke_cn.replace(/\n/g, '<br>') + '</span>';
+            } else {
+                setupEl.innerHTML = '<span class="joke-bubble">' + data.joke_cn + '</span>';
+            }
+
+            // Update punchline
+            card.querySelector('.punchline-text').textContent = data.punchline_cn;
+            card.querySelector('.joke-punchline').classList.add('hidden');
+
+            // Update EN
+            const enEls = card.querySelectorAll('.joke-en');
+            if (data.joke_en) {
+                if (enEls[0]) {
+                    enEls[0].innerHTML = '<span class="joke-en-label">EN:</span> ' + data.joke_en;
+                    enEls[0].style.display = '';
+                }
+            } else if (enEls[0]) {
+                enEls[0].style.display = 'none';
+            }
+
+            const punchEnEls = card.querySelectorAll('.punchline-en');
+            if (data.punchline_en && punchEnEls.length > 0) {
+                punchEnEls[0].innerHTML = '<span class="joke-en-label">→</span> ' + data.punchline_en;
+                punchEnEls[0].style.display = '';
+                punchEnEls[0].classList.add('hidden');
+            } else if (punchEnEls.length > 0) {
+                punchEnEls[0].style.display = 'none';
+            }
+
+            // Update category
+            card.querySelector('.joke-category').textContent = data.category;
+
+            // Fade in
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        })
+        .catch(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        });
+}
+
 // ===== 分类计数 =====
 document.addEventListener('DOMContentLoaded', function() {
     // Load category counts
