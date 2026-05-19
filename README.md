@@ -9,6 +9,8 @@ app_port: 7860
 
 # 📜 每日格言 · Daily Motto Web
 
+🌐 **在线访问**: [https://yzdsoul-daily-motto.hf.space](https://yzdsoul-daily-motto.hf.space)
+
 一个精美的中英文格言 Web 应用，支持每日格言推荐、分类浏览、全文搜索和 REST API。
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/F8TZks?referralCode=your-code)
