@@ -9,7 +9,7 @@ from pymongo import MongoClient
 import certifi
 
 # MongoDB 连接
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://crawleryzd:crawleryzd123@mycluster.lyqtjvs.mongodb.net/")
+MONGO_URI = os.environ.get("MONGO_URI") or os.environ.get("MONGODB_URI", "mongodb+srv://crawleryzd:crawleryzd123@mycluster.lyqtjvs.mongodb.net/")
 _client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
 _db = _client["daily_motto"]
 
