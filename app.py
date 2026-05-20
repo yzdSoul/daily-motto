@@ -403,12 +403,15 @@ def debug_ip():
     try:
         from quotes import _ensure_collections
         _, _, _ = _ensure_collections()
-        from quotes import _client, _db
-        _client.admin.command('ping')
-        db_status = "connected"
-        db_name = _db.name
+        from quotes import _client as q_client, _db as q_db
+        if q_client is not None:
+            q_client.admin.command('ping')
+            db_status = "connected"
+            db_name = q_db.name if q_db else "unknown"
+        else:
+            db_status = "client_none"
     except Exception as e:
-        db_status = f"error: {str(e)}"
+        db_status = f"error: {type(e).__name__}: {str(e)}"
     
     return jsonify({
         "remote_addr": request.remote_addr,
