@@ -124,6 +124,18 @@ function refreshJoke() {
         });
 }
 
+// ===== 揭晓冷笑话答案 =====
+function revealPunchline(element) {
+    const punchline = element.querySelector('.joke-punchline');
+    const punchlineEn = element.querySelector('.punchline-en');
+    if (punchline) {
+        punchline.classList.toggle('hidden');
+    }
+    if (punchlineEn) {
+        punchlineEn.classList.toggle('hidden');
+    }
+}
+
 // ===== 分类计数 =====
 document.addEventListener('DOMContentLoaded', function() {
     // Load category counts
