@@ -401,6 +401,8 @@ def debug_ip():
     db_status = "unknown"
     db_name = "unknown"
     try:
+        from quotes import _ensure_collections
+        _, _, _ = _ensure_collections()
         from quotes import _client, _db
         _client.admin.command('ping')
         db_status = "connected"
