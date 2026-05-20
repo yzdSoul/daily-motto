@@ -395,5 +395,16 @@ def api_jokes_categories():
     })
 
 
+# ===== Debug: 查看请求IP =====
+@app.route("/api/debug/ip")
+def debug_ip():
+    return jsonify({
+        "remote_addr": request.remote_addr,
+        "x_forwarded_for": request.headers.get('X-Forwarded-For'),
+        "x_real_ip": request.headers.get('X-Real-IP'),
+        "all_headers": dict(request.headers)
+    })
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
