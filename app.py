@@ -22,15 +22,18 @@ app = Flask(__name__)
 
 @app.after_request
 def add_caching_headers(response):
-    # 静态资源：浏览器缓存 1 小时
+    # 静态资源：浏览器缓存 30 天（带版本号可长期缓存）
     if request.path.startswith('/static/'):
-        response.headers['Cache-Control'] = 'public, max-age=3600'
+        response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
     # 每日 API：当天不变，缓存到明天
     elif request.path in ('/api/daily', '/api/joke/daily'):
         response.headers['Cache-Control'] = 'public, max-age=86400'
     # 分类 API：变化不频繁，缓存 5 分钟
     elif request.path in ('/api/categories', '/api/jokes/categories'):
         response.headers['Cache-Control'] = 'public, max-age=300'
+    # 随机 API：不缓存
+    elif request.path in ('/api/random', '/api/joke/random'):
+        response.headers['Cache-Control'] = 'no-cache'
     return response
 
 
