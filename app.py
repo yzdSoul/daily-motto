@@ -7,7 +7,7 @@ import random
 from datetime import date
 from flask import Flask, render_template, jsonify, request
 
-from quotes import (CATEGORIES, get_random_quote, get_daily_quote,
+from quotes import (ALL_CATEGORIES, QUOTE_CATEGORIES, FAMOUS_CATEGORIES, get_random_quote, get_daily_quote,
                      search_quotes, get_quotes_by_category, get_all_quotes,
                      get_quote_count, get_all_categories_with_counts, submit_quote,
                      record_visit_safe, get_today_visits, get_today_pv, get_visit_history)
@@ -84,7 +84,8 @@ def index():
                          joke_total=joke_total,
                          today_visits=today_visits,
                          today_pv=today_pv,
-                         categories=CATEGORIES,
+                         categories=QUOTE_CATEGORIES,
+                         famous_categories=FAMOUS_CATEGORIES,
                          joke_categories=JOKE_CATEGORIES)
 
 
@@ -94,15 +95,35 @@ def index():
 def all_quotes():
     """全部格言页面"""
     category = request.args.get("category", "")
-    if category and category in CATEGORIES:
+    if category and category in QUOTE_CATEGORIES:
         quotes = get_quotes_by_category(category)
     else:
-        quotes = get_all_quotes()
+        # 只显示格言分类（不含名句）
+        all_q = get_all_quotes()
+        quotes = [q for q in all_q if q.get("category") in QUOTE_CATEGORIES]
         category = "全部"
     return render_template("all.html",
                          quotes=quotes,
                          current_category=category,
-                         categories=CATEGORIES)
+                         categories=QUOTE_CATEGORIES)
+
+
+@app.route("/quotes")
+def famous_quotes():
+    """经典名句页面（小说/电影/动漫）"""
+    category = request.args.get("category", "")
+    if category and category in FAMOUS_CATEGORIES:
+        quotes = get_quotes_by_category(category)
+    else:
+        # 只显示名句分类
+        all_q = get_all_quotes()
+        quotes = [q for q in all_q if q.get("category") in FAMOUS_CATEGORIES]
+        category = "全部"
+    return render_template("quotes.html",
+                         quotes=quotes,
+                         current_category=category,
+                         categories=FAMOUS_CATEGORIES,
+                         total=len([q for q in get_all_quotes() if q.get("category") in FAMOUS_CATEGORIES]))
 
 
 @app.route("/search")
@@ -113,7 +134,7 @@ def search():
     return render_template("search.html",
                          results=results,
                          keyword=q,
-                         categories=CATEGORIES)
+                         categories=ALL_CATEGORIES)
 
 
 # ========== 格言 API ==========
@@ -139,7 +160,7 @@ def api_daily():
 def api_all():
     """API: 获取全部格言"""
     category = request.args.get("category", "")
-    if category and category in CATEGORIES:
+    if category and category in ALL_CATEGORIES:
         quotes = get_quotes_by_category(category)
     else:
         quotes = get_all_quotes()
@@ -167,7 +188,7 @@ def api_categories():
     counts = _get_or_refresh_cache("quote_category_counts", get_all_categories_with_counts)
     total = _get_or_refresh_cache("quote_count", get_quote_count)
     return jsonify({
-        "categories": CATEGORIES,
+        "categories": ALL_CATEGORIES,
         "counts": counts,
         "total": total,
     })
@@ -203,7 +224,7 @@ def submit():
             errors["author"] = "请输入作者"
         if not category:
             errors["category"] = "请选择分类"
-        elif category not in CATEGORIES:
+        elif category not in ALL_CATEGORIES:
             errors["category"] = "分类无效"
 
         if not errors:
@@ -211,17 +232,17 @@ def submit():
             if result["success"]:
                 return render_template("submit.html",
                                      success=True,
-                                     categories=CATEGORIES)
+                                     categories=ALL_CATEGORIES)
             else:
                 errors["cn"] = result.get("error", "提交失败，请重试")
 
         return render_template("submit.html",
                              errors=errors,
                              form_data=request.form,
-                             categories=CATEGORIES)
+                             categories=ALL_CATEGORIES)
 
     return render_template("submit.html",
-                         categories=CATEGORIES,
+                         categories=ALL_CATEGORIES,
                          form_data={},
                          errors={})
 

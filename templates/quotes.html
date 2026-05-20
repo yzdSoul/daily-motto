@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全部格言 - 每日格言</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>经典名句 - 每日格言</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.min.css') }}?v=3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -13,8 +15,8 @@
             <a href="/" class="nav-brand">📜 每日格言</a>
             <div class="nav-links">
                 <a href="/" class="nav-link">首页</a>
-                <a href="/all" class="nav-link active">格言</a>
-                <a href="/quotes" class="nav-link">名句</a>
+                <a href="/all" class="nav-link">格言</a>
+                <a href="/quotes" class="nav-link active">名句</a>
                 <a href="/jokes" class="nav-link">冷笑话</a>
                 <a href="/search" class="nav-link">搜索</a>
                 <a href="/submit" class="nav-link">投稿</a>
@@ -24,21 +26,21 @@
 
     <div class="page-header">
         <div class="container">
-            <h1>全部格言</h1>
-            <p class="page-desc">共 <strong>{{ quotes|length }}</strong> 条格言 · 当前分类：<strong>{{ current_category }}</strong></p>
+            <h1>经典名句</h1>
+            <p class="page-desc">收录 <strong>{{ total }}</strong> 条经典名句 · 小说 · 电影 · 动漫</p>
         </div>
     </div>
 
     <main class="container">
         <!-- 分类过滤器 -->
         <div class="filter-bar">
-            <a href="/all" class="filter-tag {% if current_category == '全部' %}active{% endif %}">全部</a>
+            <a href="/quotes" class="filter-tag {% if current_category == '全部' %}active{% endif %}">全部</a>
             {% for cat in categories %}
-            <a href="/all?category={{ cat }}" class="filter-tag {% if current_category == cat %}active{% endif %}">{{ cat }}</a>
+            <a href="/quotes?category={{ cat }}" class="filter-tag {% if current_category == cat %}active{% endif %}">{{ cat }}</a>
             {% endfor %}
         </div>
 
-        <!-- 格言列表 -->
+        <!-- 名句列表 -->
         <div class="quotes-list">
             {% for q in quotes %}
             <div class="quote-card" onclick="copyText(`{{ q.cn }}\n{{ q.en }}\n—— {{ q.author }}`)" title="点击复制">
@@ -56,7 +58,7 @@
 
         {% if not quotes %}
         <div class="empty-state">
-            <p>😶 这个分类下暂时没有格言</p>
+            <p>😶 这个分类下暂时没有名句</p>
         </div>
         {% endif %}
     </main>

@@ -16,11 +16,12 @@
         <div class="nav-container">
             <a href="/" class="nav-brand">📜 每日格言</a>
             <div class="nav-links">
-                <a href="/" class="nav-link active">首页</a>
-                <a href="/all" class="nav-link">格言</a>
-                <a href="/jokes" class="nav-link">冷笑话</a>
-                <a href="/search" class="nav-link">搜索</a>
-                <a href="/submit" class="nav-link">投稿</a>
+                <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">首页</a>
+                <a href="/all" class="nav-link {% if request.path == '/all' %}active{% endif %}">格言</a>
+                <a href="/quotes" class="nav-link {% if request.path == '/quotes' %}active{% endif %}">名句</a>
+                <a href="/jokes" class="nav-link {% if request.path == '/jokes' %}active{% endif %}">冷笑话</a>
+                <a href="/search" class="nav-link {% if request.path == '/search' %}active{% endif %}">搜索</a>
+                <a href="/submit" class="nav-link {% if request.path == '/submit' %}active{% endif %}">投稿</a>
             </div>
         </div>
     </nav>

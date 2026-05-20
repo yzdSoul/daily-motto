@@ -18,12 +18,18 @@ QUOTES_COL = _db["quotes"]
 PENDING_COL = _db["pending_quotes"]
 VISITS_COL = _db["visit_logs"]  # 每日访问量统计
 
-# 分类（硬编码，保持顺序稳定）
-CATEGORIES = [
+# 名句分类
+QUOTE_CATEGORIES = [
     "哲理智慧", "励志奋斗", "人生态度", "读书学习", "英文智慧",
     "爱情友谊", "时间光阴", "自然万物", "处世之道", "家国情怀",
+]
+
+FAMOUS_CATEGORIES = [
     "小说名句", "电影名句", "动漫名句",
 ]
+
+# 全部分类（用于投稿等场景）
+ALL_CATEGORIES = QUOTE_CATEGORIES + FAMOUS_CATEGORIES
 
 
 # ===== 格言查询 =====
