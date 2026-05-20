@@ -71,7 +71,7 @@ def index():
     total = _get_or_refresh_cache("quote_count", get_quote_count)
     joke_total = _get_or_refresh_cache("joke_count", get_joke_count)
     today_visits = _get_or_refresh_cache("today_visits", get_today_visits)
-    today_pv = _get_or_refresh_cache("today_pv", get_today_pv)
+    today_pv = get_today_pv()  # PV 不缓存，实时显示
 
     daily = _get_or_refresh_cache("daily_quote", get_daily_quote)
     daily_joke = _get_or_refresh_cache("daily_joke", get_daily_joke)
