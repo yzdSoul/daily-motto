@@ -217,65 +217,80 @@ def add_quotes_batch(quotes_list):
 
 def record_visit(ip_address):
     """记录一次页面访问（PV），每次请求都+1，同时记录UV"""
-    _, _, VISITS_COL = _ensure_collections()
-    today = date.today().isoformat()
-    VISITS_COL.update_one(
-        {"date": today},
-        {
-            "$addToSet": {"ips": ip_address},
-            "$inc": {"pv": 1},
-        },
-        upsert=True
-    )
+    try:
+        _, _, VISITS_COL = _ensure_collections()
+        today = date.today().isoformat()
+        VISITS_COL.update_one(
+            {"date": today},
+            {
+                "$addToSet": {"ips": ip_address},
+                "$inc": {"pv": 1},
+            },
+            upsert=True
+        )
+    except Exception:
+        pass  # MongoDB 不可用时静默失败
 
 
 def record_visit_safe(ip_address):
     """记录访问（带IP去重），同IP当天只计一次UV，但PV每次都+1"""
-    _, _, VISITS_COL = _ensure_collections()
-    today = date.today().isoformat()
-    # 使用 $addToSet 原子操作：如果IP已存在则不添加，但pv始终+1
-    VISITS_COL.update_one(
-        {"date": today},
-        {
-            "$addToSet": {"ips": ip_address},
-            "$inc": {"pv": 1},
-        },
-        upsert=True
-    )
+    try:
+        _, _, VISITS_COL = _ensure_collections()
+        today = date.today().isoformat()
+        # 使用 $addToSet 原子操作：如果IP已存在则不添加，但pv始终+1
+        VISITS_COL.update_one(
+            {"date": today},
+            {
+                "$addToSet": {"ips": ip_address},
+                "$inc": {"pv": 1},
+            },
+            upsert=True
+        )
+    except Exception:
+        pass  # MongoDB 不可用时静默失败
 
 
 def get_today_visits():
     """获取今日UV（去重后的独立访客数）"""
-    _, _, VISITS_COL = _ensure_collections()
-    today = date.today().isoformat()
-    doc = VISITS_COL.find_one({"date": today})
-    if not doc:
+    try:
+        _, _, VISITS_COL = _ensure_collections()
+        today = date.today().isoformat()
+        doc = VISITS_COL.find_one({"date": today})
+        if not doc:
+            return 0
+        return len(doc.get("ips", []))
+    except Exception:
         return 0
-    return len(doc.get("ips", []))
 
 
 def get_today_pv():
     """获取今日PV（页面浏览次数，不去重）"""
-    _, _, VISITS_COL = _ensure_collections()
-    today = date.today().isoformat()
-    doc = VISITS_COL.find_one({"date": today})
-    return doc.get("pv", 0) if doc else 0
+    try:
+        _, _, VISITS_COL = _ensure_collections()
+        today = date.today().isoformat()
+        doc = VISITS_COL.find_one({"date": today})
+        return doc.get("pv", 0) if doc else 0
+    except Exception:
+        return 0
 
 
 def get_visit_history(days=7):
     """获取最近 N 天的访问历史（UV数）"""
     from datetime import timedelta
-    _, _, VISITS_COL = _ensure_collections()
-    results = []
-    for i in range(days - 1, -1, -1):
-        d = (date.today() - timedelta(days=i)).isoformat()
-        doc = VISITS_COL.find_one({"date": d})
-        count = len(doc.get("ips", [])) if doc else 0
-        results.append({
-            "date": d,
-            "count": count
-        })
-    return results
+    try:
+        _, _, VISITS_COL = _ensure_collections()
+        results = []
+        for i in range(days - 1, -1, -1):
+            d = (date.today() - timedelta(days=i)).isoformat()
+            doc = VISITS_COL.find_one({"date": d})
+            count = len(doc.get("ips", [])) if doc else 0
+            results.append({
+                "date": d,
+                "count": count
+            })
+        return results
+    except Exception:
+        return []
 
 
 def get_quotes_paginated(category=None, page=1, per_page=20):
