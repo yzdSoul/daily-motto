@@ -95,7 +95,7 @@ def get_all_categories_with_counts():
     results = list(QUOTES_COL.aggregate(pipeline))
     counts = {r["_id"]: r["count"] for r in results}
     # 保证所有定义过的分类都有（即使为 0）
-    for cat in CATEGORIES:
+    for cat in ALL_CATEGORIES:
         if cat not in counts:
             counts[cat] = 0
     return counts
@@ -196,52 +196,46 @@ def add_quotes_batch(quotes_list):
 # ===== 访问量统计 =====
 
 def record_visit(ip_address):
-    """记录一次页面访问（PV），同IP当天只计一次"""
+    """记录一次页面访问（PV），每次请求都+1，同时记录UV"""
     today = date.today().isoformat()
     VISITS_COL.update_one(
         {"date": today},
         {
             "$addToSet": {"ips": ip_address},
-            "$inc": {"count": 1},
+            "$inc": {"pv": 1},
         },
         upsert=True
     )
 
 
 def record_visit_safe(ip_address):
-    """记录访问（带IP去重），同IP当天多次访问只计一次"""
+    """记录访问（带IP去重），同IP当天只计一次UV，但PV每次都+1"""
     today = date.today().isoformat()
-    # 先检查今天这个IP是否已记录
-    existing = VISITS_COL.find_one({"date": today, "ips": ip_address})
-    if existing:
-        return False  # 已记录，不重复计数
-    
+    # 使用 $addToSet 原子操作：如果IP已存在则不添加，但pv始终+1
     VISITS_COL.update_one(
         {"date": today},
         {
             "$addToSet": {"ips": ip_address},
-            "$inc": {"count": 1},
+            "$inc": {"pv": 1},
         },
         upsert=True
     )
-    return True
 
 
 def get_today_visits():
-    """获取今日访问量（去重后的UV数）"""
+    """获取今日UV（去重后的独立访客数）"""
     today = date.today().isoformat()
     doc = VISITS_COL.find_one({"date": today})
     if not doc:
         return 0
-    # 返回去重后的IP数（UV），如果没有ips字段则返回count
-    return len(doc.get("ips", [])) if "ips" in doc else doc.get("count", 0)
+    return len(doc.get("ips", []))
 
 
 def get_today_pv():
-    """获取今日原始PV（不去重）"""
+    """获取今日PV（页面浏览次数，不去重）"""
     today = date.today().isoformat()
     doc = VISITS_COL.find_one({"date": today})
-    return doc.get("count", 0) if doc else 0
+    return doc.get("pv", 0) if doc else 0
 
 
 def get_visit_history(days=7):
@@ -251,10 +245,7 @@ def get_visit_history(days=7):
     for i in range(days - 1, -1, -1):
         d = (date.today() - timedelta(days=i)).isoformat()
         doc = VISITS_COL.find_one({"date": d})
-        if doc and "ips" in doc:
-            count = len(doc["ips"])
-        else:
-            count = doc.get("count", 0) if doc else 0
+        count = len(doc.get("ips", [])) if doc else 0
         results.append({
             "date": d,
             "count": count
