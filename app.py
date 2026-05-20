@@ -9,7 +9,8 @@ from flask import Flask, render_template, jsonify, request
 
 from quotes import (CATEGORIES, get_random_quote, get_daily_quote,
                      search_quotes, get_quotes_by_category, get_all_quotes,
-                     get_quote_count, get_all_categories_with_counts, submit_quote)
+                     get_quote_count, get_all_categories_with_counts, submit_quote,
+                     record_visit, get_today_visits, get_visit_history)
 from jokes import (JOKE_CATEGORIES, get_random_joke, get_daily_joke,
                     search_jokes, get_jokes_by_category, get_all_jokes,
                     get_joke_count, get_all_joke_categories_with_counts,
@@ -55,9 +56,13 @@ def _get_or_refresh_cache(key, fetcher):
 @app.route("/")
 def index():
     """首页 - 展示每日格言、随机格言和每日冷笑话"""
+    # 记录访问
+    record_visit()
+    
     # 总数每天只查一次
     total = _get_or_refresh_cache("quote_count", get_quote_count)
     joke_total = _get_or_refresh_cache("joke_count", get_joke_count)
+    today_visits = _get_or_refresh_cache("today_visits", get_today_visits)
 
     daily = _get_or_refresh_cache("daily_quote", get_daily_quote)
     daily_joke = _get_or_refresh_cache("daily_joke", get_daily_joke)
@@ -69,6 +74,7 @@ def index():
                          today=date.today().isoformat(),
                          total=total,
                          joke_total=joke_total,
+                         today_visits=today_visits,
                          categories=CATEGORIES,
                          joke_categories=JOKE_CATEGORIES)
 

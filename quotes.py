@@ -16,6 +16,7 @@ _db = _client["daily_motto"]
 # 集合引用
 QUOTES_COL = _db["quotes"]
 PENDING_COL = _db["pending_quotes"]
+VISITS_COL = _db["visit_logs"]  # 每日访问量统计
 
 # 分类（硬编码，保持顺序稳定）
 CATEGORIES = [
@@ -183,3 +184,36 @@ def add_quotes_batch(quotes_list):
         else:
             failed += 1
     return {"success": success, "failed": failed}
+
+
+# ===== 访问量统计 =====
+
+def record_visit():
+    """记录一次页面访问（PV）"""
+    today = date.today().isoformat()
+    VISITS_COL.update_one(
+        {"date": today},
+        {"$inc": {"count": 1}},
+        upsert=True
+    )
+
+
+def get_today_visits():
+    """获取今日访问量"""
+    today = date.today().isoformat()
+    doc = VISITS_COL.find_one({"date": today})
+    return doc["count"] if doc else 0
+
+
+def get_visit_history(days=7):
+    """获取最近 N 天的访问历史"""
+    from datetime import timedelta
+    results = []
+    for i in range(days - 1, -1, -1):
+        d = (date.today() - timedelta(days=i)).isoformat()
+        doc = VISITS_COL.find_one({"date": d})
+        results.append({
+            "date": d,
+            "count": doc["count"] if doc else 0
+        })
+    return results
