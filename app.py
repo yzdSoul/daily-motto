@@ -398,12 +398,13 @@ def api_jokes_categories():
 # ===== Debug: 查看请求IP和数据库状态 =====
 @app.route("/api/debug/ip")
 def debug_ip():
-    from quotes import _client, _db
-    from jokes import _client as joke_client
     db_status = "unknown"
+    db_name = "unknown"
     try:
+        from quotes import _client, _db
         _client.admin.command('ping')
         db_status = "connected"
+        db_name = _db.name
     except Exception as e:
         db_status = f"error: {str(e)}"
     
@@ -412,8 +413,9 @@ def debug_ip():
         "x_forwarded_for": request.headers.get('X-Forwarded-For'),
         "x_real_ip": request.headers.get('X-Real-IP'),
         "mongo_uri_env": os.environ.get("MONGO_URI", "NOT_SET")[:30] + "...",
+        "mongodb_uri_env": os.environ.get("MONGODB_URI", "NOT_SET")[:30] + "...",
         "db_status": db_status,
-        "db_name": _db.name
+        "db_name": db_name
     })
 
 
