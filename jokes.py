@@ -9,14 +9,21 @@ from datetime import date
 from pymongo import MongoClient
 import certifi
 
-# MongoDB 连接
-MONGO_URI = os.environ.get("MONGO_URI") or os.environ.get("MONGODB_URI", "mongodb+srv://crawleryzd:crawleryzd123@mycluster.lyqtjvs.mongodb.net/")
-_client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
-_db = _client["daily_motto"]
+# MongoDB 连接（懒加载）
+_client = None
+_db = None
+JOKES_COL = None
+PENDING_JOKES_COL = None
 
-# 集合引用
-JOKES_COL = _db["jokes"]
-PENDING_JOKES_COL = _db["pending_jokes"]
+def _ensure_collections():
+    global _client, _db, JOKES_COL, PENDING_JOKES_COL
+    if _client is None:
+        MONGO_URI = os.environ.get("MONGO_URI") or os.environ.get("MONGODB_URI", "mongodb+srv://crawleryzd:crawleryzd123@mycluster.lyqtjvs.mongodb.net/")
+        _client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+        _db = _client["daily_motto"]
+        JOKES_COL = _db["jokes"]
+        PENDING_JOKES_COL = _db["pending_jokes"]
+    return JOKES_COL, PENDING_JOKES_COL
 
 # 笑话分类
 JOKE_CATEGORIES = [
@@ -35,11 +42,13 @@ JOKE_CATEGORIES = [
 
 def get_joke_count():
     """获取笑话总数"""
+    JOKES_COL, _ = _ensure_collections()
     return JOKES_COL.count_documents({})
 
 
 def get_random_joke():
     """获取随机冷笑话"""
+    JOKES_COL, _ = _ensure_collections()
     count = get_joke_count()
     if count == 0:
         return None
@@ -49,6 +58,7 @@ def get_random_joke():
 
 def get_daily_joke():
     """根据日期获取每日冷笑话（每日固定同一条）"""
+    JOKES_COL, _ = _ensure_collections()
     count = get_joke_count()
     if count == 0:
         return None
@@ -60,6 +70,7 @@ def get_daily_joke():
 
 def search_jokes(keyword):
     """搜索冷笑话"""
+    JOKES_COL, _ = _ensure_collections()
     if not keyword:
         return []
     keyword = keyword.lower()
@@ -78,23 +89,26 @@ def search_jokes(keyword):
 
 def get_jokes_by_category(category):
     """按分类获取笑话"""
+    JOKES_COL, _ = _ensure_collections()
     return list(JOKES_COL.find({"category": category}, {"_id": False}))
 
 
 def get_all_jokes():
     """获取全部笑话"""
+    JOKES_COL, _ = _ensure_collections()
     return list(JOKES_COL.find({}, {"_id": False}))
 
 
 def get_all_joke_categories_with_counts():
     """获取所有笑话分类及数量（1次聚合查询）"""
+    JOKES_COL, _ = _ensure_collections()
     pipeline = [
         {"$group": {"_id": "$category", "count": {"$sum": 1}}},
         {"$sort": {"_id": 1}},
     ]
     results = list(JOKES_COL.aggregate(pipeline))
     counts = {r["_id"]: r["count"] for r in results}
-    for cat in JOKE_CATEGORIES:
+    for cat in JOKES_CATEGORIES:
         if cat not in counts:
             counts[cat] = 0
     return counts
@@ -105,6 +119,7 @@ def get_all_joke_categories_with_counts():
 def add_joke(joke_cn, punchline_cn, category,
              joke_en="", punchline_en="", source="curated"):
     """添加一条冷笑话"""
+    JOKES_COL, _ = _ensure_collections()
     doc = {
         "joke_cn": joke_cn,
         "punchline_cn": punchline_cn,
@@ -141,6 +156,7 @@ def add_jokes_batch(jokes_list):
 
 def submit_joke(joke_cn, punchline_cn, category, joke_en="", punchline_en="", submitter=""):
     """用户提交冷笑话 -> pending_jokes"""
+    JOKES_COL, PENDING_JOKES_COL = _ensure_collections()
     doc = {
         "joke_cn": joke_cn,
         "punchline_cn": punchline_cn,
@@ -167,11 +183,13 @@ def submit_joke(joke_cn, punchline_cn, category, joke_en="", punchline_en="", su
 
 def get_pending_jokes():
     """获取待审核的投稿"""
+    _, PENDING_JOKES_COL = _ensure_collections()
     return list(PENDING_JOKES_COL.find({"status": "pending"}, {"_id": False}))
 
 
 def approve_joke(joke_cn):
     """批准投稿 -> 移入 jokes"""
+    JOKES_COL, PENDING_JOKES_COL = _ensure_collections()
     doc = PENDING_JOKES_COL.find_one_and_update(
         {"joke_cn": joke_cn, "status": "pending"},
         {"$set": {"status": "approved"}},
@@ -195,6 +213,7 @@ def approve_joke(joke_cn):
 
 def reject_joke(joke_cn, reason=""):
     """拒绝投稿"""
+    _, PENDING_JOKES_COL = _ensure_collections()
     PENDING_JOKES_COL.find_one_and_update(
         {"joke_cn": joke_cn, "status": "pending"},
         {"$set": {"status": "rejected", "review_notes": reason}},
@@ -204,6 +223,7 @@ def reject_joke(joke_cn, reason=""):
 
 def get_jokes_paginated(category=None, page=1, per_page=20):
     """分页获取冷笑话"""
+    JOKES_COL, _ = _ensure_collections()
     skip = (page - 1) * per_page
     query = {"category": category} if category else {}
     cursor = JOKES_COL.find(query, {"_id": False}).skip(skip).limit(per_page)
@@ -212,5 +232,6 @@ def get_jokes_paginated(category=None, page=1, per_page=20):
 
 def get_jokes_count(category=None):
     """获取冷笑话总数（可指定分类）"""
+    JOKES_COL, _ = _ensure_collections()
     query = {"category": category} if category else {}
     return JOKES_COL.count_documents(query)

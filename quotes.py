@@ -8,15 +8,23 @@ from datetime import date
 from pymongo import MongoClient
 import certifi
 
-# MongoDB 连接
-MONGO_URI = os.environ.get("MONGO_URI") or os.environ.get("MONGODB_URI", "mongodb+srv://crawleryzd:crawleryzd123@mycluster.lyqtjvs.mongodb.net/")
-_client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
-_db = _client["daily_motto"]
+# MongoDB 连接（懒加载）
+_client = None
+_db = None
+QUOTES_COL = None
+PENDING_COL = None
+VISITS_COL = None
 
-# 集合引用
-QUOTES_COL = _db["quotes"]
-PENDING_COL = _db["pending_quotes"]
-VISITS_COL = _db["visit_logs"]  # 每日访问量统计
+def _ensure_collections():
+    global _client, _db, QUOTES_COL, PENDING_COL, VISITS_COL
+    if _client is None:
+        MONGO_URI = os.environ.get("MONGO_URI") or os.environ.get("MONGODB_URI", "mongodb+srv://crawleryzd:crawleryzd123@mycluster.lyqtjvs.mongodb.net/")
+        _client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+        _db = _client["daily_motto"]
+        QUOTES_COL = _db["quotes"]
+        PENDING_COL = _db["pending_quotes"]
+        VISITS_COL = _db["visit_logs"]
+    return QUOTES_COL, PENDING_COL, VISITS_COL
 
 # 名句分类
 QUOTE_CATEGORIES = [
@@ -36,11 +44,13 @@ ALL_CATEGORIES = QUOTE_CATEGORIES + FAMOUS_CATEGORIES
 
 def get_quote_count():
     """获取格言总数"""
+    QUOTES_COL, _, _ = _ensure_collections()
     return QUOTES_COL.count_documents({})
 
 
 def get_random_quote():
     """获取随机格言"""
+    QUOTES_COL, _, _ = _ensure_collections()
     count = get_quote_count()
     if count == 0:
         return None
@@ -50,6 +60,7 @@ def get_random_quote():
 
 def get_daily_quote():
     """根据日期获取每日格言"""
+    QUOTES_COL, _, _ = _ensure_collections()
     count = get_quote_count()
     if count == 0:
         return None
@@ -61,6 +72,7 @@ def get_daily_quote():
 
 def search_quotes(keyword):
     """搜索格言（模糊匹配）"""
+    QUOTES_COL, _, _ = _ensure_collections()
     if not keyword:
         return []
     keyword = keyword.lower()
@@ -78,16 +90,19 @@ def search_quotes(keyword):
 
 def get_quotes_by_category(category):
     """按分类获取格言"""
+    QUOTES_COL, _, _ = _ensure_collections()
     return list(QUOTES_COL.find({"category": category}, {"_id": False}))
 
 
 def get_all_quotes():
     """获取全部格言"""
+    QUOTES_COL, _, _ = _ensure_collections()
     return list(QUOTES_COL.find({}, {"_id": False}))
 
 
 def get_all_categories_with_counts():
     """获取所有分类及数量"""
+    QUOTES_COL, _, _ = _ensure_collections()
     pipeline = [
         {"$group": {"_id": "$category", "count": {"$sum": 1}}},
         {"$sort": {"_id": 1}},
@@ -105,6 +120,7 @@ def get_all_categories_with_counts():
 
 def submit_quote(cn, author, category, en="", submitter=""):
     """用户提交格言 -> pending_quotes"""
+    QUOTES_COL, PENDING_COL, _ = _ensure_collections()
     doc = {
         "cn": cn,
         "en": en,
@@ -130,11 +146,13 @@ def submit_quote(cn, author, category, en="", submitter=""):
 
 def get_pending_quotes():
     """获取待审核的投稿"""
+    _, PENDING_COL, _ = _ensure_collections()
     return list(PENDING_COL.find({"status": "pending"}, {"_id": False}))
 
 
 def approve_quote(cn):
     """批准投稿 -> 移入 quotes"""
+    QUOTES_COL, PENDING_COL, _ = _ensure_collections()
     doc = PENDING_COL.find_one_and_update(
         {"cn": cn, "status": "pending"},
         {"$set": {"status": "approved"}},
@@ -157,6 +175,7 @@ def approve_quote(cn):
 
 def reject_quote(cn, reason=""):
     """拒绝投稿"""
+    _, PENDING_COL, _ = _ensure_collections()
     PENDING_COL.find_one_and_update(
         {"cn": cn, "status": "pending"},
         {"$set": {"status": "rejected", "review_notes": reason}},
@@ -166,6 +185,7 @@ def reject_quote(cn, reason=""):
 
 def add_quote(cn, en, author, category, source="curated"):
     """直接添加一条格言（AI 生成或手工精选）"""
+    QUOTES_COL, _, _ = _ensure_collections()
     doc = {
         "cn": cn,
         "en": en,
@@ -197,6 +217,7 @@ def add_quotes_batch(quotes_list):
 
 def record_visit(ip_address):
     """记录一次页面访问（PV），每次请求都+1，同时记录UV"""
+    _, _, VISITS_COL = _ensure_collections()
     today = date.today().isoformat()
     VISITS_COL.update_one(
         {"date": today},
@@ -210,6 +231,7 @@ def record_visit(ip_address):
 
 def record_visit_safe(ip_address):
     """记录访问（带IP去重），同IP当天只计一次UV，但PV每次都+1"""
+    _, _, VISITS_COL = _ensure_collections()
     today = date.today().isoformat()
     # 使用 $addToSet 原子操作：如果IP已存在则不添加，但pv始终+1
     VISITS_COL.update_one(
@@ -224,6 +246,7 @@ def record_visit_safe(ip_address):
 
 def get_today_visits():
     """获取今日UV（去重后的独立访客数）"""
+    _, _, VISITS_COL = _ensure_collections()
     today = date.today().isoformat()
     doc = VISITS_COL.find_one({"date": today})
     if not doc:
@@ -233,6 +256,7 @@ def get_today_visits():
 
 def get_today_pv():
     """获取今日PV（页面浏览次数，不去重）"""
+    _, _, VISITS_COL = _ensure_collections()
     today = date.today().isoformat()
     doc = VISITS_COL.find_one({"date": today})
     return doc.get("pv", 0) if doc else 0
@@ -241,6 +265,7 @@ def get_today_pv():
 def get_visit_history(days=7):
     """获取最近 N 天的访问历史（UV数）"""
     from datetime import timedelta
+    _, _, VISITS_COL = _ensure_collections()
     results = []
     for i in range(days - 1, -1, -1):
         d = (date.today() - timedelta(days=i)).isoformat()
@@ -255,6 +280,7 @@ def get_visit_history(days=7):
 
 def get_quotes_paginated(category=None, page=1, per_page=20):
     """分页获取格言"""
+    QUOTES_COL, _, _ = _ensure_collections()
     skip = (page - 1) * per_page
     query = {"category": category} if category else {}
     cursor = QUOTES_COL.find(query, {"_id": False}).skip(skip).limit(per_page)
@@ -263,5 +289,6 @@ def get_quotes_paginated(category=None, page=1, per_page=20):
 
 def get_quotes_count(category=None):
     """获取格言总数（可指定分类）"""
+    QUOTES_COL, _, _ = _ensure_collections()
     query = {"category": category} if category else {}
     return QUOTES_COL.count_documents(query)
