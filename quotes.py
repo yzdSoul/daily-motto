@@ -189,32 +189,68 @@ def add_quotes_batch(quotes_list):
 
 # ===== 访问量统计 =====
 
-def record_visit():
-    """记录一次页面访问（PV）"""
+def record_visit(ip_address):
+    """记录一次页面访问（PV），同IP当天只计一次"""
     today = date.today().isoformat()
     VISITS_COL.update_one(
         {"date": today},
-        {"$inc": {"count": 1}},
+        {
+            "$addToSet": {"ips": ip_address},
+            "$inc": {"count": 1},
+        },
         upsert=True
     )
 
 
+def record_visit_safe(ip_address):
+    """记录访问（带IP去重），同IP当天多次访问只计一次"""
+    today = date.today().isoformat()
+    # 先检查今天这个IP是否已记录
+    existing = VISITS_COL.find_one({"date": today, "ips": ip_address})
+    if existing:
+        return False  # 已记录，不重复计数
+    
+    VISITS_COL.update_one(
+        {"date": today},
+        {
+            "$addToSet": {"ips": ip_address},
+            "$inc": {"count": 1},
+        },
+        upsert=True
+    )
+    return True
+
+
 def get_today_visits():
-    """获取今日访问量"""
+    """获取今日访问量（去重后的UV数）"""
     today = date.today().isoformat()
     doc = VISITS_COL.find_one({"date": today})
-    return doc["count"] if doc else 0
+    if not doc:
+        return 0
+    # 返回去重后的IP数（UV），如果没有ips字段则返回count
+    return len(doc.get("ips", [])) if "ips" in doc else doc.get("count", 0)
+
+
+def get_today_pv():
+    """获取今日原始PV（不去重）"""
+    today = date.today().isoformat()
+    doc = VISITS_COL.find_one({"date": today})
+    return doc.get("count", 0) if doc else 0
 
 
 def get_visit_history(days=7):
-    """获取最近 N 天的访问历史"""
+    """获取最近 N 天的访问历史（UV数）"""
     from datetime import timedelta
     results = []
     for i in range(days - 1, -1, -1):
         d = (date.today() - timedelta(days=i)).isoformat()
         doc = VISITS_COL.find_one({"date": d})
+        if doc and "ips" in doc:
+            count = len(doc["ips"])
+        else:
+            count = doc.get("count", 0) if doc else 0
         results.append({
             "date": d,
-            "count": doc["count"] if doc else 0
+            "count": count
         })
     return results
