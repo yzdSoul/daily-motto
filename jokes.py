@@ -200,3 +200,17 @@ def reject_joke(joke_cn, reason=""):
         {"$set": {"status": "rejected", "review_notes": reason}},
     )
     return {"success": True, "message": "已拒绝"}
+
+
+def get_jokes_paginated(category=None, page=1, per_page=20):
+    """分页获取冷笑话"""
+    skip = (page - 1) * per_page
+    query = {"category": category} if category else {}
+    cursor = JOKES_COL.find(query, {"_id": False}).skip(skip).limit(per_page)
+    return list(cursor)
+
+
+def get_jokes_count(category=None):
+    """获取冷笑话总数（可指定分类）"""
+    query = {"category": category} if category else {}
+    return JOKES_COL.count_documents(query)

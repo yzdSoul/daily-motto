@@ -10,11 +10,12 @@ from flask import Flask, render_template, jsonify, request
 from quotes import (ALL_CATEGORIES, QUOTE_CATEGORIES, FAMOUS_CATEGORIES, get_random_quote, get_daily_quote,
                      search_quotes, get_quotes_by_category, get_all_quotes,
                      get_quote_count, get_all_categories_with_counts, submit_quote,
-                     record_visit_safe, get_today_visits, get_today_pv, get_visit_history)
+                     record_visit_safe, get_today_visits, get_today_pv, get_visit_history,
+                     get_quotes_paginated, get_quotes_count)
 from jokes import (JOKE_CATEGORIES, get_random_joke, get_daily_joke,
                     search_jokes, get_jokes_by_category, get_all_jokes,
                     get_joke_count, get_all_joke_categories_with_counts,
-                    submit_joke)
+                    submit_joke, get_jokes_paginated, get_jokes_count)
 
 app = Flask(__name__)
 
@@ -93,19 +94,33 @@ def index():
 
 @app.route("/all")
 def all_quotes():
-    """全部格言页面"""
+    """全部格言页面（分页）"""
     category = request.args.get("category", "")
+    page = request.args.get("page", 1, type=int)
+    if page < 1:
+        page = 1
+    per_page = 20
+    
     if category and category in QUOTE_CATEGORIES:
-        quotes = get_quotes_by_category(category)
+        quotes = get_quotes_paginated(category, page, per_page)
+        total = get_quotes_count(category)
     else:
         # 只显示格言分类（不含名句）
-        all_q = get_all_quotes()
-        quotes = [q for q in all_q if q.get("category") in QUOTE_CATEGORIES]
+        quotes = get_quotes_paginated(None, page, per_page)
+        # 过滤掉名句分类
+        quotes = [q for q in quotes if q.get("category") in QUOTE_CATEGORIES]
+        total = get_quotes_count()
         category = "全部"
+    
+    total_pages = (total + per_page - 1) // per_page
+    
     return render_template("all.html",
                          quotes=quotes,
                          current_category=category,
-                         categories=QUOTE_CATEGORIES)
+                         categories=QUOTE_CATEGORIES,
+                         page=page,
+                         total_pages=total_pages,
+                         total=total)
 
 
 @app.route("/quotes")
@@ -128,11 +143,13 @@ def famous_quotes():
 
 @app.route("/search")
 def search():
-    """搜索页面"""
+    """搜索页面（同时搜索格言和冷笑话）"""
     q = request.args.get("q", "").strip()
-    results = search_quotes(q) if q else []
+    quote_results = search_quotes(q) if q else []
+    joke_results = search_jokes(q) if q else []
     return render_template("search.html",
-                         results=results,
+                         quote_results=quote_results,
+                         joke_results=joke_results,
                          keyword=q,
                          categories=ALL_CATEGORIES)
 
@@ -295,17 +312,30 @@ def submit_joke_route():
 
 @app.route("/jokes")
 def jokes_list():
-    """冷笑话列表页"""
+    """冷笑话列表页（分页）"""
     category = request.args.get("category", "")
+    page = request.args.get("page", 1, type=int)
+    if page < 1:
+        page = 1
+    per_page = 20
+    
     if category and category in JOKE_CATEGORIES:
-        jokes = get_jokes_by_category(category)
+        jokes = get_jokes_paginated(category, page, per_page)
+        total = get_jokes_count(category)
     else:
-        jokes = get_all_jokes()
+        jokes = get_jokes_paginated(None, page, per_page)
+        total = get_jokes_count()
         category = "全部"
+    
+    total_pages = (total + per_page - 1) // per_page
+    
     return render_template("jokes.html",
                          jokes=jokes,
                          current_category=category,
-                         categories=JOKE_CATEGORIES)
+                         categories=JOKE_CATEGORIES,
+                         page=page,
+                         total_pages=total_pages,
+                         total=total)
 
 
 # ========== 冷笑话 API ==========

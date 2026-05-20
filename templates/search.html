@@ -45,24 +45,67 @@
 
         {% if keyword %}
         <div class="search-results">
-            <p class="result-count">找到 <strong>{{ results|length }}</strong> 条相关格言</p>
-            <div class="quotes-list">
-                {% for q in results %}
-                <div class="quote-card" onclick="copyText(`{{ q.cn }}\n{{ q.en }}\n—— {{ q.author }})" title="点击复制">
-                    <div class="quote-content">
-                        <p class="quote-cn">{{ q.cn }}</p>
-                        <p class="quote-en">{{ q.en }}</p>
+            <!-- 格言结果 -->
+            <div class="result-section">
+                <h3 class="result-title">📜 格言（{{ quote_results|length }} 条）</h3>
+                {% if quote_results %}
+                <div class="quotes-list">
+                    {% for q in quote_results %}
+                    <div class="quote-card" onclick="copyText(`{{ q.cn }}\n{{ q.en }}\n—— {{ q.author }}`)" title="点击复制">
+                        <div class="quote-content">
+                            <p class="quote-cn">{{ q.cn }}</p>
+                            <p class="quote-en">{{ q.en }}</p>
+                        </div>
+                        <div class="quote-footer">
+                            <span class="quote-author">—— {{ q.author }}</span>
+                            <span class="quote-category">{{ q.category }}</span>
+                        </div>
                     </div>
-                    <div class="quote-footer">
-                        <span class="quote-author">—— {{ q.author }}</span>
-                        <span class="quote-category">{{ q.category }}</span>
-                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% else %}
+                <p class="no-results">没有找到匹配的格言</p>
+                {% endif %}
             </div>
-            {% if not results %}
+
+            <!-- 冷笑话结果 -->
+            <div class="result-section">
+                <h3 class="result-title">🥶 冷笑话（{{ joke_results|length }} 条）</h3>
+                {% if joke_results %}
+                <div class="quotes-list">
+                    {% for j in joke_results %}
+                    <div class="joke-card" onclick="revealPunchline(this)" title="点击揭晓答案">
+                        <div class="joke-setup">
+                            <span class="joke-bubble">{{ j.joke_cn|replace('\n', '<br>')|safe }}</span>
+                        </div>
+                        <div class="joke-punchline hidden">
+                            <span class="punchline-arrow">→</span>
+                            <span class="punchline-text">{{ j.punchline_cn }}</span>
+                        </div>
+                        {% if j.joke_en %}
+                        <div class="joke-en">
+                            <span class="joke-en-label">EN:</span> {{ j.joke_en }}
+                        </div>
+                        {% endif %}
+                        {% if j.punchline_en %}
+                        <div class="joke-en punchline-en hidden">
+                            <span class="joke-en-label">→</span> {{ j.punchline_en }}
+                        </div>
+                        {% endif %}
+                        <div class="joke-footer">
+                            <span class="joke-category">{{ j.category }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="no-results">没有找到匹配的冷笑话</p>
+                {% endif %}
+            </div>
+
+            {% if not quote_results and not joke_results %}
             <div class="empty-state">
-                <p>🔍 没有找到匹配的格言，试试其他关键词吧</p>
+                <p>🔍 没有找到任何匹配内容，试试其他关键词吧</p>
             </div>
             {% endif %}
         </div>

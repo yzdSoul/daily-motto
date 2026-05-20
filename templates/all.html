@@ -63,6 +63,25 @@
             <p>😶 这个分类下暂时没有格言</p>
         </div>
         {% endif %}
+
+        <!-- 分页 -->
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="/all?{% if current_category != '全部' %}category={{ current_category }}&{% endif %}page={{ page - 1 }}" class="page-btn">← 上一页</a>
+            {% else %}
+            <span class="page-btn disabled">← 上一页</span>
+            {% endif %}
+            
+            <span class="page-info">第 {{ page }} / {{ total_pages }} 页（共 {{ total }} 条）</span>
+            
+            {% if page < total_pages %}
+            <a href="/all?{% if current_category != '全部' %}category={{ current_category }}&{% endif %}page={{ page + 1 }}" class="page-btn">下一页 →</a>
+            {% else %}
+            <span class="page-btn disabled">下一页 →</span>
+            {% endif %}
+        </div>
+        {% endif %}
     </main>
 
     <footer class="footer">

@@ -260,3 +260,17 @@ def get_visit_history(days=7):
             "count": count
         })
     return results
+
+
+def get_quotes_paginated(category=None, page=1, per_page=20):
+    """分页获取格言"""
+    skip = (page - 1) * per_page
+    query = {"category": category} if category else {}
+    cursor = QUOTES_COL.find(query, {"_id": False}).skip(skip).limit(per_page)
+    return list(cursor)
+
+
+def get_quotes_count(category=None):
+    """获取格言总数（可指定分类）"""
+    query = {"category": category} if category else {}
+    return QUOTES_COL.count_documents(query)
